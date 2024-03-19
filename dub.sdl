@@ -1,0 +1,9 @@
+name "chasm"
+description "Scripting language"
+authors "ZyeByte"
+copyright "Copyright © 2024, ZyeByte"
+license "LGPL-3.0-or-later"
+targetType "library"
+targetPath "out"
+
+subPackage "chc"

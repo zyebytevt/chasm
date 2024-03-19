@@ -1,0 +1,9 @@
+name "chc"
+description "Chasm compiler"
+authors "ZyeByte"
+copyright "Copyright © 2024, ZyeByte"
+license "LGPL-3.0-or-later"
+targetType "executable"
+targetPath "out"
+
+dependency "chasm" path=".." version="*"

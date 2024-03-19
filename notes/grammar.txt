@@ -1,0 +1,55 @@
+Program                 = Declaration*
+
+# Declarations
+Declaration             = Attribute* ( ClassDecl | FunctionDecl | VariableDecl )
+ClassDecl               = "class" Identifier ( "extends" Identifier )? "{" Declaration* "}"
+FunctionDecl            = "func" Identifier "(" Parameters? ")" ( ":" Type )? Block?
+VariableDecl            = ( "var" | "const" ) Identifier ":" Type ( "=" Expression )? StatementEnd
+
+# Attributes
+Attribute               = NativeAttrib | VisiblityAttrib | "abstract" | "final"
+NativeAttrib            = "native" ( "(" Arguments ")" )?
+VisiblityAttrib         = "public" | "protected" | "private"
+
+# Statements
+Statement               = ExpressionStmt | Goto | If | Return | While | Block
+ExpressionStmt          = Expression StatementEnd
+Goto                    = "goto" Identifier StatementEnd
+If                      = "if" Expression Statement ( "else" Statement )?
+Return                  = "return" Expression? StatementEnd
+While                   = "while" Expression Statement
+Block                   = "{" ( Statement | VariableDecl )* "}"
+StatementEnd            = <inserted by lexer>
+
+# Expressions
+Expression              = Assignment | Ternary
+Assignment              = ( Call "." )? Identifier ( "=" | "*=" | "/=" | "%=" | "+=" | "-="
+                        | "~=" | "<<=" | ">>=" | "&=" | "|=" | "^=" ) Expression
+
+Ternary                 = LogicOr ( "?" Expression ":" Expression )*
+LogicOr                 = LogicAnd ( "||" LogicAnd )*
+LogicAnd                = BitOr ( "&&" BitOr )*
+BitOr                   = BitXor ( "|" BitXor )*
+BitXor                  = BitAnd ( "^" BitAnd )*
+BitAnd                  = Equality ( "&" Equality )*
+Equality                = Comparison ( ( "==" | "!=" | "is" | "isnt" ) Comparison )*
+Comparison              = BitShift ( ( ">" | "<" | ">=" | "<=" ) BitShift )*
+BitShift                = Term ( ( "<<" | ">>" ) Term )*
+Term                    = Factor ( ( "+" | "-" ) Factor )*
+Factor                  = Unary ( ( "/" | "*" | "%" ) Unary )*
+Unary                   = ( "!" | "-" | "~" ) Unary | Call
+Call                    = Primary ( "(" Arguments? ")" | "." Identifier | "[" Expression "]")*
+Primary                 = "true" | "false" | "null" | "this" | Number | String
+                        | Identifier | "(" Expression ")" | "super" "." Identifier;
+
+# Basic stuff
+Type                    = Identifier Generic?
+Generic                 = "<" Type ">"
+Parameters              = Parameter ( "," Parameter )* ","?
+Parameter               = Identifier ":" Type ( "=" Expression )?
+Arguments               = Expression ( "," Expression )* ","?
+Number                  = ( "0" ("x" | "b" | "o") )? Digit+ ( "." Digit+ )?
+String                  = "\"" <any except "\"">* "\"" 
+Identifier              = Alpha ( Alpha | Digit )*
+Alpha                   = [a-z] | [A-Z] | "_"
+Digit                   = [0-9] | [a-f] | [A-F]
