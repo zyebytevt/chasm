@@ -4,19 +4,17 @@ import std.stdio;
 import std.file : readText;
 import std.datetime.stopwatch : StopWatch, AutoStart;
 
-import chasm.compiler.lexer.lexer;
+import chasm.compiler.compiler;
 
 void main()
 {
 	immutable string source = readText("test.ch");
-	auto lexer = new Lexer();
 
-	auto sw = StopWatch(AutoStart.yes);
+	auto compiler = new Compiler();
 
-	lexer.initialize(source);
-	while (!lexer.isEof) {
-		lexer.next();
-	}
+	compiler.messageCallback = (position, type, message) {
+		writefln("%s %s: %s", position, type, message);
+	};
 
-	writefln("Total duration: %d ms", sw.peek.total!"msecs");
+	compiler.compile(source, "test.ch");
 }

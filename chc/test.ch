@@ -1,3 +1,1 @@
-async func test() {
-
-}
+-2 < 20 == true

@@ -1,7 +1,9 @@
 module chasm.compiler.compiler;
 
-import chasm.compiler.lexer.token;
-import chasm.compiler.lexer.lexer;
+import chasm.compiler.lexing.token;
+import chasm.compiler.lexing.lexer;
+import chasm.compiler.ast;
+import chasm.compiler.parsing.expression;
 
 enum MessageType {
     error,
@@ -20,11 +22,11 @@ public:
     MessageCallback messageCallback;
     GetModuleSourceCallback getModuleSourceCallback;
 
-    this() {
+    this() @trusted {
         mLexer = new Lexer(this);
     }
 
-    ~this() {
+    ~this() @trusted {
         mLexer.destroy();
     }
 
@@ -40,5 +42,16 @@ public:
         }
         
         return null;
+    }
+
+    final void compile(string source, string fileName = "<unknown>") {
+        mLexer.start(source, fileName);
+        Expression expression = mLexer.parseExpression();
+
+        writeMessage(SourcePosition("", 0, 0), MessageType.information, expression.toString());
+
+        import chasm.compiler.debugging;
+        auto visitor = new ExpressionPrintVisitor();
+        visitor.visit(expression);
     }
 }

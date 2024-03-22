@@ -1,6 +1,6 @@
-module chasm.compiler.lexer.stream;
+module chasm.compiler.lexing.stream;
 
-import chasm.compiler.lexer.token;
+import chasm.compiler.lexing.token;
 
 package:
 
@@ -11,13 +11,13 @@ private:
     SourcePosition mPosition;
 
 public:
-    this(string text, string fileName) pure nothrow {
+    this(string text, string fileName) @safe pure nothrow {
         mText = text;
         mCurrent = 0;
         mPosition = SourcePosition(fileName, 1, 1);
     }
 
-    char get() pure nothrow {
+    char get() @safe pure nothrow {
         if (mCurrent >= mText.length) {
             return '\0';
         }
@@ -34,16 +34,16 @@ public:
         return c;
     }
 
-    char peek(ptrdiff_t offset = 0) pure const nothrow {
+    char peek(ptrdiff_t offset = 0) @safe pure const nothrow {
         immutable size_t index = mCurrent + offset;
 
         return index >= mText.length ? '\0' : mText[index];
     }
 
-    bool isEof() pure const nothrow => mCurrent >= mText.length;
+    bool isEof() @safe pure const nothrow => mCurrent >= mText.length;
 
-    SourcePosition position() pure const nothrow => mPosition;
+    SourcePosition position() @safe pure const nothrow => mPosition;
 
-    string text() pure const nothrow => mText;
-    size_t current() pure const nothrow => mCurrent;
+    string text() @safe pure const nothrow => mText;
+    size_t current() @safe pure const nothrow => mCurrent;
 }

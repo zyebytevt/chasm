@@ -1,19 +1,20 @@
-module chasm.compiler.lexer.lexer;
+module chasm.compiler.lexing.lexer;
 
 import std.string : format;
 import std.conv : to;
+import std.algorithm : canFind;
 
-import chasm.compiler.lexer.stream;
-import chasm.compiler.lexer.token;
+import chasm.compiler.lexing.stream;
+import chasm.compiler.lexing.token;
 import chasm.compiler.compiler;
 
 class Lexer {
 protected:
     Compiler mCompiler;
     TextStream mStream;
-    Token mLastToken;
+    Token mCurrentToken;
 
-    Token readOperator() {
+    Token scanOperator() {
         auto start = mStream.position;
 
         switch (mStream.get()) with (Token.Type) {
@@ -232,7 +233,7 @@ protected:
         }
     }
 
-    Token getToken() {
+    Token scanToken() {
     start:
         if (isEof) {
             return Token(mStream.position, Token.Type.endOfFile);
@@ -271,7 +272,7 @@ protected:
         case '\n':
             mStream.get();
 
-            switch (mLastToken.type) {
+            switch (mCurrentToken.type) {
             case Token.Type.openBrace:
             case Token.Type.openBracket:
             case Token.Type.openParen:
@@ -307,7 +308,7 @@ protected:
         case '.':
         case '?':
         case ',':
-            return readOperator();
+            return scanOperator();
 
         case '"':
         case '\'':
@@ -335,17 +336,45 @@ public:
         mCompiler = compiler;
     }
 
-    void start(string source, string fileName = "<unknown>") {
+    void start(string source, string fileName) {
         mStream = TextStream(source, fileName);
         lexShiftRight = true;
+        mCurrentToken = scanToken();
     }
-
-    // TODO: Figure out how to do a peek
 
     Token next() {
-        mLastToken = getToken();
-        return mLastToken;
+        immutable result = mCurrentToken;
+        mCurrentToken = scanToken();
+        return result;
     }
 
-    bool isEof() => mStream.isEof();
+    Token peek() {
+        return mCurrentToken;
+    }
+
+    bool consume(Token.Type type) {
+        if (mCurrentToken.type == type) {
+            next();
+            return true;
+        }
+
+        return false;
+    }
+
+    bool match(Token.Type type) {
+        return mCurrentToken.type == type;
+    }
+
+    void enforce(Token.Type[] types...) {
+        if (!types.canFind(mCurrentToken.type)) {
+            compiler.writeMessage(mCurrentToken.position, MessageType.error,
+                format!"Got '%s', expected %('%s' or %)."(mCurrentToken.type, types));
+        }
+
+        next();
+    }
+
+    bool isEof() @safe pure nothrow => mStream.isEof();
+
+    Compiler compiler() pure nothrow => mCompiler;
 }

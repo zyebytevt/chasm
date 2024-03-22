@@ -1,4 +1,4 @@
-module chasm.compiler.lexer.token;
+module chasm.compiler.lexing.token;
 
 import std.string : format;
 import std.sumtype : SumType;
@@ -9,7 +9,7 @@ public:
     size_t line;
     size_t column;
 
-    int opCmp(ref const SourcePosition tp) pure const nothrow {
+    int opCmp(ref const SourcePosition tp) @safe pure const nothrow {
         if (line == tp.line)
         {
             if (column > tp.column)
@@ -27,9 +27,9 @@ public:
         return -1;
     }
     
-    bool opEquals(ref const SourcePosition tp) pure const nothrow => opCmp(tp) == 0;
+    bool opEquals(ref const SourcePosition tp) @safe pure const nothrow => opCmp(tp) == 0;
     
-    string toString() const => format!"%s(%d, %d)"(fileName, line, column);
+    string toString() @safe const => format!"%s(%d, %d)"(fileName, line, column);
 }
 
 struct Token {
@@ -55,12 +55,12 @@ public:
     Type type = void;
     Value value = void;
 
-    this(SourcePosition position, Type type) {
+    this(SourcePosition position, Type type) @safe pure nothrow {
         this.position = position;
         this.type = type;
     }
 
-    this(T)(SourcePosition position, Type type, T value) {
+    this(T)(SourcePosition position, Type type, T value) @trusted pure nothrow {
         this(position, type);
         this.value = Value(value);
     }

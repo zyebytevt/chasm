@@ -1,8 +1,8 @@
 module chasm.compiler.ast;
 
-import chasm.compiler.lexer.token;
-import core.sys.posix.sys.socket;
-import std.file;
+import chasm.compiler.lexing.token;
+
+@safe pure nothrow:
 
 abstract class Node {
 public:
@@ -71,15 +71,17 @@ public:
 
 abstract class Expression : Node {
 public:
-    interface Visitor(R) {
-        R visit(Literal expression);
-        R visit(Symbol expression);
-        R visit(Unary expression);
-        R visit(Binary expression);
-        R visit(Ternary expression);
-        R visit(Call expression);
-        R visit(Super expression);
-        R visit(This expression);
+    interface Visitor {
+        void visit(Expression expression);
+        void visit(Literal expression);
+        void visit(Symbol expression);
+        void visit(Unary expression);
+        void visit(Binary expression);
+        void visit(Ternary expression);
+        void visit(Call expression);
+        void visit(Super expression);
+        void visit(This expression);
+        void visit(New expression);
     }
 
     static class Literal : Expression {
@@ -90,6 +92,8 @@ public:
             super(position);
             this.token = token;
         }
+
+        override void accept(Visitor visitor) => visitor.visit(this);
     }
 
     static class Symbol : Expression {
@@ -100,32 +104,38 @@ public:
             super(position);
             this.token = token;
         }
+
+        override void accept(Visitor visitor) => visitor.visit(this);
     }
 
     static class Unary : Expression {
     public:
-        Token.Type operator;
+        Token operator;
         Expression operand;
 
-        this(Token.Type operator, Expression operand, SourcePosition position) {
+        this(Token operator, Expression operand, SourcePosition position) {
             super(position);
             this.operator = operator;
             this.operand = operand;
         }
+
+        override void accept(Visitor visitor) => visitor.visit(this);
     }
 
     static class Binary : Expression {
     public:
-        Token.Type operator;
+        Token operator;
         Expression left;
         Expression right;
 
-        this(Token.Type operator, Expression left, Expression right, SourcePosition position) {
+        this(Token operator, Expression left, Expression right, SourcePosition position) {
             super(position);
             this.operator = operator;
             this.left = left;
             this.right = right;
         }
+
+        override void accept(Visitor visitor) => visitor.visit(this);
     }
 
     static class Ternary : Expression {
@@ -140,6 +150,8 @@ public:
             this.trueResult = trueResult;
             this.falseResult = falseResult;
         }
+
+        override void accept(Visitor visitor) => visitor.visit(this);
     }
 
     static class Call : Expression {
@@ -152,6 +164,8 @@ public:
             this.callee = callee;
             this.arguments = arguments;
         }
+
+        override void accept(Visitor visitor) => visitor.visit(this);
     }
 
     static class Super : Expression {
@@ -162,6 +176,8 @@ public:
             super(position);
             this.keyword = keyword;
         }
+
+        override void accept(Visitor visitor) => visitor.visit(this);
     }
 
     static class This : Expression {
@@ -172,6 +188,8 @@ public:
             super(position);
             this.keyword = keyword;
         }
+
+        override void accept(Visitor visitor) => visitor.visit(this);
     }
 
     static class New : Expression {
@@ -184,11 +202,15 @@ public:
             this.type = type;
             this.call = call;
         }
+
+        override void accept(Visitor visitor) => visitor.visit(this);
     }
 
     this(SourcePosition position) {
         super(position);
     }
+
+    abstract void accept(Visitor visitor);
 }
 
 class Statement : Node {
