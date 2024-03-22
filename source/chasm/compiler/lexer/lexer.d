@@ -1,20 +1,17 @@
 module chasm.compiler.lexer.lexer;
 
+import std.string : format;
 import std.conv : to;
 
 import chasm.compiler.lexer.stream;
 import chasm.compiler.lexer.token;
+import chasm.compiler.compiler;
 
 class Lexer {
-private:
+protected:
+    Compiler mCompiler;
     TextStream mStream;
     Token mLastToken;
-
-    pragma(inline, true) {
-        static bool isIdentStart(char c) pure nothrow => c == '_' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
-        static bool isDigit(char c) pure nothrow => c >= '0' && c <= '9';
-        static bool isIdent(char c) pure nothrow => isIdentStart(c) || isDigit(c);
-    }
 
     Token readOperator() {
         auto start = mStream.position;
@@ -39,7 +36,7 @@ private:
             }
             return Token(start, less);
         case '>':
-            if (mStream.peek() == '>' && !inGenericDefinition) {
+            if (mStream.peek() == '>' && lexShiftRight) {
                 mStream.get();
                 return Token(start, shiftRight);
             } else if (mStream.peek() == '=') {
@@ -118,7 +115,8 @@ private:
         case '~': return Token(start, bitwiseNot);
         case ',': return Token(start, comma);
         default:
-            assert(false, "Not an operator.");
+            mCompiler.writeMessage(start, MessageType.error, format!"Unknown operator: %s"(mStream.peek(-1)));
+            return Token(start, endOfStatement);
         }
     }
 
@@ -126,8 +124,10 @@ private:
         auto start = mStream.position;
         size_t startIndex = mStream.current;
 
-        while (isIdent(mStream.peek())) {
+        char c = mStream.peek();
+        while (c == '_' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')) {
             mStream.get();
+            c = mStream.peek();
         }
 
         string word = mStream.text[startIndex..mStream.current];
@@ -209,9 +209,9 @@ private:
 
         string numString = mStream.text[startIndex..mStream.current];
 
-        if (numString.length > 2 && numString[0] == '0' && isIdentStart(numString[1])) {
+        if (numString.length > 2 && numString[0] == '0') {
             if (isFloating) {
-                assert(false, "Floating point cannot have a base.");
+                mCompiler.writeMessage(start, MessageType.error, "Floating point numbers cannot have a base.");
             }
 
             switch (numString[1]) {
@@ -219,7 +219,7 @@ private:
             case 'o': base = 8; break;
             case 'x': base = 16; break;
             default:
-                assert(false, "Invalid number base.");
+                mCompiler.writeMessage(start, MessageType.error, "Invalid number base.");
             }
 
             numString = numString[2..$];
@@ -242,6 +242,31 @@ private:
         case ' ', '\t', '\r', '\\':
             mStream.get();
             goto start;
+
+        case '/':
+            if (mStream.peek(1) == '/') {
+                mStream.get();
+                mStream.get();
+
+                while (mStream.peek() != '\n' && !isEof) {
+                    mStream.get();
+                }
+
+                goto start;
+            } else if (mStream.peek(1) == '*') {
+                mStream.get();
+                mStream.get();
+
+                while (mStream.peek() != '*' && mStream.peek(1) != '/' && !isEof) {
+                    mStream.get();
+                }
+
+                mStream.get();
+                mStream.get();
+
+                goto start;
+            }
+            goto case '*';
 
         case '\n':
             mStream.get();
@@ -273,7 +298,6 @@ private:
         case '+':
         case '-':
         case '*':
-        case '/':
         case '%':
         case '&':
         case '|':
@@ -298,17 +322,25 @@ private:
             return scanWord();
 
         default:
-            assert(false, "Unknown character.");
+            mCompiler.writeMessage(mStream.position, MessageType.error, format!"Unknown character: %s"(mStream.get()));
+            goto start;
         }
     }
 
 public:
-    /// If true, >> will be treated as two tokens, otherwise it will be treated as a single token.
-    bool inGenericDefinition = false;
+    /// If false, >> will be treated as two tokens, otherwise it will be treated as a single token.
+    bool lexShiftRight;
 
-    void initialize(string source, string fileName = "<unknown>") {
-        mStream = TextStream(source, fileName);
+    this(Compiler compiler) {
+        mCompiler = compiler;
     }
+
+    void start(string source, string fileName = "<unknown>") {
+        mStream = TextStream(source, fileName);
+        lexShiftRight = true;
+    }
+
+    // TODO: Figure out how to do a peek
 
     Token next() {
         mLastToken = getToken();

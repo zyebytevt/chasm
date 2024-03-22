@@ -18,7 +18,9 @@ public:
     }
 
     char get() pure nothrow {
-        debug assert(mCurrent < mText.length, "End of file reached");
+        if (mCurrent >= mText.length) {
+            return '\0';
+        }
 
         immutable char c = mText[mCurrent++];
         

@@ -1,22 +1,25 @@
-Program                 = Declaration*
+Module                  = ( Declaration | Import )*
+Import                  = "import" String StatementEnd
+
+SingleComment           = "//" <any except "\n">* "\n"
+MultiComment            = "/*" <any>* "*/"
 
 # Declarations
-Declaration             = Attribute* ( ClassDecl | FunctionDecl | VariableDecl )
+Declaration             = Attribute* ( ClassDecl | FunctionDecl | VariableDecl ) StatementEnd
 ClassDecl               = "class" Identifier ( "extends" Identifier )? "{" Declaration* "}"
 FunctionDecl            = "func" Identifier "(" Parameters? ")" ( ":" Type )? Block?
-VariableDecl            = ( "var" | "const" ) Identifier ":" Type ( "=" Expression )? StatementEnd
+VariableDecl            = ( "var" | "const" ) Identifier ":" Type ( "=" Expression )?
 
 # Attributes
-Attribute               = NativeAttrib | VisiblityAttrib | "abstract" | "final"
+Attribute               = NativeAttrib | VisiblityAttrib | "abstract" | "final" | "async"
 NativeAttrib            = "native" ( "(" Arguments ")" )?
 VisiblityAttrib         = "public" | "protected" | "private"
 
 # Statements
-Statement               = ExpressionStmt | Goto | If | Return | While | Block
-ExpressionStmt          = Expression StatementEnd
-Goto                    = "goto" Identifier StatementEnd
+Statement               = (Expression | Goto | If | Return | While | Block) StatementEnd
+Goto                    = "goto" Identifier
 If                      = "if" Expression Statement ( "else" Statement )?
-Return                  = "return" Expression? StatementEnd
+Return                  = "return" Expression?
 While                   = "while" Expression Statement
 Block                   = "{" ( Statement | VariableDecl )* "}"
 StatementEnd            = <inserted by lexer>

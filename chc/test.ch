@@ -1,0 +1,3 @@
+async func test() {
+
+}
